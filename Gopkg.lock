@@ -14,28 +14,52 @@
   revision = "2be2f12b358dc57d70b8f501b00be450192efbc3"
 
 [[projects]]
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
+  version = "v1.1.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/edsrzf/mmap-go"
+  packages = ["."]
+  revision = "0bce6a6887123b67a60366d2c9fe2dfb74289d2e"
+
+[[projects]]
   name = "github.com/ethereum/go-ethereum"
   packages = [
     ".",
     "accounts",
     "accounts/abi",
     "accounts/abi/bind",
+    "accounts/abi/bind/backends",
     "accounts/keystore",
     "common",
+    "common/bitutil",
     "common/hexutil",
     "common/math",
     "common/mclock",
+    "consensus",
+    "consensus/ethash",
+    "consensus/misc",
+    "core",
+    "core/bloombits",
+    "core/state",
     "core/types",
+    "core/vm",
     "crypto",
+    "crypto/bn256",
     "crypto/randentropy",
     "crypto/secp256k1",
     "crypto/sha3",
+    "eth/filters",
     "ethdb",
     "event",
     "log",
     "metrics",
     "params",
     "rlp",
+    "rpc",
     "trie"
   ]
   revision = "1e67410e88d2685bc54611a7c9f75c327b553ccc"
@@ -54,10 +78,25 @@
   revision = "553a641470496b2327abcac10b36396bd98e45c9"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/golang-lru"
+  packages = [
+    ".",
+    "simplelru"
+  ]
+  revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
+
+[[projects]]
   name = "github.com/pborman/uuid"
   packages = ["."]
   revision = "e790cca94e6cc75c7064b1332e63811d4aae1a53"
   version = "v1.1"
+
+[[projects]]
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -73,6 +112,18 @@
   name = "github.com/rjeczalik/notify"
   packages = ["."]
   revision = "c31e5f2cb22b3e4ef3f882f413847669bf2652b9"
+
+[[projects]]
+  name = "github.com/rs/cors"
+  packages = ["."]
+  revision = "feef513b9575b32f84bafa580aad89b011259019"
+  version = "v1.3.0"
+
+[[projects]]
+  name = "github.com/stretchr/testify"
+  packages = ["assert"]
+  revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
+  version = "v1.2.1"
 
 [[projects]]
   branch = "master"
@@ -98,9 +149,16 @@
   name = "golang.org/x/crypto"
   packages = [
     "pbkdf2",
+    "ripemd160",
     "scrypt"
   ]
   revision = "91a49db82a88618983a78a06c1cbd4e00ab749ab"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/net"
+  packages = ["websocket"]
+  revision = "22ae77b79946ea320088417e4d50825671d82d57"
 
 [[projects]]
   branch = "master"
@@ -129,9 +187,15 @@
   packages = ["collections/prque"]
   revision = "8dcd6a7f4951f6ff3ee9cbb919a06d8925822e57"
 
+[[projects]]
+  branch = "v2"
+  name = "gopkg.in/natefinch/npipe.v2"
+  packages = ["."]
+  revision = "c1b8fa8bdccecb0b8db834ee0b92fdbcfa606dd6"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6ec1a7dc373a4fc6e16cc8015ee54d1021541eb049c51b24e581a3259d064886"
+  inputs-digest = "1799e5101fac3b1dc718adb86ae20424f629773b66dc586f0ab8b860081449d5"
   solver-name = "gps-cdcl"
   solver-version = 1
