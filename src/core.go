@@ -57,14 +57,14 @@ func (c *Chain) Stop() {
 func (c *Chain) NotifyTx(tx *Transaction) {
 	select {
 	case c.txQueue <- tx:
-	case c.quit:
+	case <-c.quit:
 	}
 }
 
 func (c *Chain) NotifyBlock(block *Block) {
 	select {
 	case c.blockQueue <- block:
-	case c.quit:
+	case <-c.quit:
 	}
 }
 
