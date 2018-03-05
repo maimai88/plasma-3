@@ -9,7 +9,7 @@ type NetworkClient struct {
 	*shhclient.Client
 }
 
-// NotifyRecipient sends a confirmation message to a recipient
+// NotifyRecipient sends a confirmation message to a recipient.
 // message must be encrypted with public key of recipient
 func (c *NetworkClient) NotifyRecipient() {
 

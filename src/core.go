@@ -81,6 +81,8 @@ func (c *Chain) addBlock(block *Block) {
 }
 
 func (c *Chain) stateLoop() {
+	// concurrent deposits will blow this thing up
+
 	pendingTransactions := make([]*Transaction, 0, 100)
 	var signerPeriod <-chan time.Time
 	// this required better approach

@@ -1,9 +1,11 @@
 package plasma
 
 import (
+	"crypto/ecdsa"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
@@ -32,6 +34,24 @@ func (tx *Transaction) EncodeUnsigned() []byte {
 		tx.Fee,
 	})
 	return rst
+}
+
+func (tx *Transaction) Encode() ([]byte, error) {
+	return rlp.EncodeToBytes(tx)
+}
+
+func (tx *Transaction) Sign(key1 *ecdsa.PrivateKey, key2 *ecdsa.PrivateKey) (err error) {
+	raw := tx.EncodeUnsigned()
+	hash := crypto.Keccak256(raw)
+	tx.Sig1, err = crypto.Sign(hash, key1)
+	if err != nil {
+		return err
+	}
+	if key2 == nil {
+		return nil
+	}
+	tx.Sig2, err = crypto.Sign(hash, key2)
+	return err
 }
 
 func NewDeposit(depositor common.Address, value *big.Int) *Transaction {
