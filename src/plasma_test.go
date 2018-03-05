@@ -98,11 +98,11 @@ func TestDeposit(t *testing.T) {
 	value := big.NewInt(10)
 	// RLPList fails to decode when lots of null bytes
 	tx := &Transaction{
-		Blknum1:   big.NewInt(1),
+		Blknum1:   big.NewInt(0),
 		Txindex1:  big.NewInt(1),
 		Oindex1:   big.NewInt(1),
 		Blknum2:   big.NewInt(0),
-		Txindex2:  big.NewInt(0),
+		Txindex2:  big.NewInt(1),
 		Oindex2:   big.NewInt(1),
 		Newowner1: addr2,
 		Amount1:   value,
@@ -120,4 +120,8 @@ func TestDeposit(t *testing.T) {
 	childnum, err := contract.Last_child_block(nil)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(2), childnum.Int64())
+
+	// test that root hash is expected
+	_, err = contract.Child_chain__root(nil, big.NewInt(1))
+	assert.NoError(t, err)
 }
