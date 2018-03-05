@@ -79,9 +79,8 @@ func TestDeposit(t *testing.T) {
 	require.NoError(t, err)
 	addr := crypto.PubkeyToAddress(key.PublicKey)
 	backend := backends.NewSimulatedBackend(core.GenesisAlloc{
-		addr:             {Balance: big.NewInt(10000000000000)},
-		sender:           {Balance: big.NewInt(85975200000000000)},
-		common.Address{}: {Balance: big.NewInt(1000000000000)},
+		addr:   {Balance: big.NewInt(10000000000000)},
+		sender: {Balance: big.NewInt(85975200000000000)},
 	})
 	opts := bind.NewKeyedTransactor(key)
 	_, _, contract, err := DeployPlasma(opts, backend)
@@ -96,17 +95,7 @@ func TestDeposit(t *testing.T) {
 	addr2 := crypto.PubkeyToAddress(key2.PublicKey)
 	assert.NotEqual(t, addr2, common.Address{})
 	value := big.NewInt(10)
-	// RLPList fails to decode when lots of null bytes
-	tx := &Transaction{
-		Blknum1:   big.NewInt(0),
-		Txindex1:  big.NewInt(1),
-		Oindex1:   big.NewInt(1),
-		Blknum2:   big.NewInt(0),
-		Txindex2:  big.NewInt(1),
-		Oindex2:   big.NewInt(1),
-		Newowner1: addr2,
-		Amount1:   value,
-	}
+	tx := NewDeposit(addr2, value)
 	opts.Value = value
 	opts.GasLimit = 96273
 	encoded := tx.EncodeUnsigned()

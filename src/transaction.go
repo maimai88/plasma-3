@@ -34,9 +34,9 @@ func (tx *Transaction) EncodeUnsigned() []byte {
 	return rst
 }
 
-func NewDeposit(depositor common.Address, value *big.Int) Transaction {
+func NewDeposit(depositor common.Address, value *big.Int) *Transaction {
 	// no idea why but vyper fails to parse rlp lists with lots of null bytes
-	return Transaction{
+	return &Transaction{
 		Txindex1:  big.NewInt(1),
 		Oindex1:   big.NewInt(1),
 		Txindex2:  big.NewInt(1),

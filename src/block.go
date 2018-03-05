@@ -9,11 +9,15 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
+const (
+	signatureLength = 65
+)
+
 type Block struct {
-	transactions []Transaction
+	transactions []*Transaction
 }
 
-func NewBlock(txList []Transaction) *Block {
+func NewBlock(txList []*Transaction) *Block {
 	return &Block{transactions: txList}
 }
 
