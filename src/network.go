@@ -12,7 +12,6 @@ type NetworkClient struct {
 // NotifyRecipient sends a confirmation message to a recipient.
 // message must be encrypted with public key of recipient
 func (c *NetworkClient) NotifyRecipient() {
-
 }
 
 // BroadcastBlock will be used by authority to broadcast newly

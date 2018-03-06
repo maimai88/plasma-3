@@ -23,6 +23,9 @@ type Transaction struct {
 	Fee       *big.Int
 	Sig1      []byte
 	Sig2      []byte
+
+	spent1 bool
+	spent2 bool
 }
 
 func (tx *Transaction) EncodeUnsigned() []byte {
@@ -55,7 +58,7 @@ func (tx *Transaction) Sign(key1 *ecdsa.PrivateKey, key2 *ecdsa.PrivateKey) (err
 }
 
 func NewDeposit(depositor common.Address, value *big.Int) *Transaction {
-	// no idea why but vyper fails to parse rlp lists with lots of null bytes
+	// no idea why but vyper fails to parse rlp lists with additional null bytes
 	return &Transaction{
 		Txindex1:  big.NewInt(1),
 		Oindex1:   big.NewInt(1),
@@ -64,4 +67,11 @@ func NewDeposit(depositor common.Address, value *big.Int) *Transaction {
 		Newowner1: depositor,
 		Amount1:   value,
 	}
+}
+
+type UTXO struct {
+	Block  *big.Int
+	Tx     *big.Int
+	OIndex *big.Int
+	Amount *big.Int
 }

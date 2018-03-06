@@ -3,6 +3,7 @@ package plasma
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -19,6 +20,22 @@ type Block struct {
 
 func NewBlock(txList []*Transaction) *Block {
 	return &Block{transactions: txList}
+}
+
+func (b *Block) IsSpent(txindex, oindex *big.Int) bool {
+	if oindex.Int64() == 0 {
+		return b.transactions[txindex.Int64()].spent1
+	}
+	return b.transactions[txindex.Int64()].spent2
+}
+
+func (b *Block) SetSpent(txindex, oindex *big.Int) {
+	if oindex.Int64() == 0 {
+		b.transactions[txindex.Int64()].spent1 = true
+	} else {
+		b.transactions[txindex.Int64()].spent2 = true
+	}
+
 }
 
 func (b *Block) RawSign(key *ecdsa.PrivateKey) (raw []byte, err error) {

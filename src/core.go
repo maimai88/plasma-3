@@ -1,8 +1,12 @@
 package plasma
 
 import (
+	"math/big"
 	"sync"
 	"time"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 func NewChain(
@@ -18,6 +22,7 @@ func NewChain(
 	}
 }
 
+// Chain manages transactions state.
 type Chain struct {
 	plasmaContract *Plasma
 
@@ -74,25 +79,69 @@ func (c *Chain) SubscribeBlocks(blockCh chan<- *Block) {
 	c.newBlocks = append(c.newBlocks, blockCh)
 }
 
+func (c *Chain) FindUTXOs(address common.Address) []UTXO {
+	c.stateMu.RLock()
+	defer c.stateMu.RUnlock()
+	rst := []UTXO{}
+	for i, block := range c.blocks {
+		for j, tx := range block.transactions {
+			if !tx.spent1 && tx.Newowner1 == address {
+				rst = append(rst, UTXO{
+					big.NewInt(int64(i) + 1), big.NewInt(int64(j)),
+					big.NewInt(0), tx.Amount1})
+			}
+			if !tx.spent2 && tx.Newowner2 == address {
+				rst = append(rst, UTXO{
+					big.NewInt(int64(i) + 1), big.NewInt(int64(j)),
+					big.NewInt(1), tx.Amount2})
+			}
+		}
+	}
+	return rst
+}
+
 func (c *Chain) addBlock(block *Block) {
 	c.stateMu.Lock()
 	defer c.stateMu.Unlock()
 	c.blocks = append(c.blocks, block)
 }
 
-func (c *Chain) stateLoop() {
-	// concurrent deposits will blow this thing up
+func (c *Chain) validateTransaction(tx *Transaction) bool {
+	c.stateMu.Lock()
+	defer c.stateMu.Unlock()
+	if tx.Blknum1.Int64() != 0 {
+		if c.blocks[tx.Blknum1.Int64()-1].IsSpent(tx.Txindex1, tx.Oindex1) {
+			log.Info("invalid transaction")
+			return false
+		}
+		// FIXME do only if tx is valid
+		c.blocks[tx.Blknum1.Int64()-1].SetSpent(tx.Txindex1, tx.Oindex1)
+	}
+	if tx.Blknum2.Int64() != 0 {
+		if c.blocks[tx.Blknum2.Int64()-1].IsSpent(tx.Txindex2, tx.Oindex2) {
+			log.Info("invalid transaction")
+			return false
+		}
+		// FIXME
+		c.blocks[tx.Blknum2.Int64()-1].SetSpent(tx.Txindex2, tx.Oindex2)
+	}
+	// TODO check that the sum of inputs and outputs is the same
+	// TODO check that signature for the output matches input confirmation
+	return true
+}
 
+func (c *Chain) stateLoop() {
+	// FIXME concurrent deposits will blow this thing up
 	pendingTransactions := make([]*Transaction, 0, 100)
 	var signerPeriod <-chan time.Time
-	// this required better approach
+	// this requires better approach
 	if c.isAuthority {
 		ticker := time.NewTicker(100 * time.Millisecond)
 		signerPeriod = ticker.C
 		defer ticker.Stop()
 	}
 	depositLogs := make(chan *PlasmaDeposit, 10)
-	// if minter exits with error wrap it with retry
+	// FIXME wrap whole loop with retry on network errors
 	sub, _ := c.plasmaContract.WatchDeposit(nil, depositLogs)
 	defer sub.Unsubscribe()
 	for {
@@ -100,8 +149,10 @@ func (c *Chain) stateLoop() {
 		case <-c.quit:
 			return
 		case tx := <-c.txQueue:
-			// this will leak if node is not an authority
-			pendingTransactions = append(pendingTransactions, tx)
+			// this should not be used if node isn't authority
+			if c.validateTransaction(tx) {
+				pendingTransactions = append(pendingTransactions, tx)
+			}
 		case <-signerPeriod:
 			if len(pendingTransactions) != 0 {
 				block := NewBlock(pendingTransactions)
