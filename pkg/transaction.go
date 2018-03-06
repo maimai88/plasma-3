@@ -64,6 +64,22 @@ func NewDeposit(depositor common.Address, value *big.Int) *Transaction {
 	}
 }
 
+func NewTransaction(utxo1, utxo2 UTXO, owner1, owner2 common.Address, amount1, amount2, fee *big.Int) *Transaction {
+	return &Transaction{
+		Blknum1:   utxo1.Block,
+		Txindex1:  utxo1.Tx,
+		Oindex1:   utxo1.OIndex,
+		Blknum2:   utxo2.Block,
+		Txindex2:  utxo2.Tx,
+		Oindex2:   utxo2.OIndex,
+		Newowner1: owner1,
+		Amount1:   amount1,
+		Newowner2: owner2,
+		Amount2:   amount2,
+		Fee:       fee,
+	}
+}
+
 type UTXO struct {
 	Block  *big.Int
 	Tx     *big.Int

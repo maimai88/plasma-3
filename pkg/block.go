@@ -18,7 +18,7 @@ type Block struct {
 	transactions []*Transaction
 }
 
-func NewBlock(txList []*Transaction) *Block {
+func NewBlock(txList ...*Transaction) *Block {
 	return &Block{transactions: txList}
 }
 

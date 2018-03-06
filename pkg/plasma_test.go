@@ -74,6 +74,10 @@ func TestDeposit(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, rlp.DecodeBytes(txbytes, rlpTx))
 
+	key2, err := crypto.GenerateKey()
+	require.NoError(t, err)
+	addr2 := crypto.PubkeyToAddress(key2.PublicKey)
+	assert.NotEqual(t, addr2, common.Address{})
 	sender := [20]byte{57, 186, 8, 60, 48, 252, 229, 152, 131, 119, 95, 199, 41, 187, 225, 249, 222, 77, 238, 17}
 
 	key, err := crypto.GenerateKey()
@@ -81,6 +85,7 @@ func TestDeposit(t *testing.T) {
 	addr := crypto.PubkeyToAddress(key.PublicKey)
 	backend := backends.NewSimulatedBackend(core.GenesisAlloc{
 		addr:   {Balance: big.NewInt(10000000000000)},
+		addr2:  {Balance: big.NewInt(100000000000000)},
 		sender: {Balance: big.NewInt(85975200000000000)},
 	})
 	opts := bind.NewKeyedTransactor(key)
@@ -91,14 +96,11 @@ func TestDeposit(t *testing.T) {
 	require.NoError(t, backend.SendRawTransaction(context.TODO(), rlpTx))
 	backend.Commit()
 
-	key2, err := crypto.GenerateKey()
-	require.NoError(t, err)
-	addr2 := crypto.PubkeyToAddress(key2.PublicKey)
-	assert.NotEqual(t, addr2, common.Address{})
-	value := big.NewInt(10)
-	tx := NewDeposit(addr2, value)
+	value := big.NewInt(10000000000000)
+	opts = bind.NewKeyedTransactor(key2)
 	opts.Value = value
 	opts.GasLimit = 96273
+	tx := NewDeposit(addr2, value)
 	encoded := tx.EncodeUnsigned()
 	hash := crypto.Keccak256Hash(encoded, tx.Sig1, tx.Sig2)
 	_, err = contract.Deposit(opts, hash)

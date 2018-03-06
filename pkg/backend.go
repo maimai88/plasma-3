@@ -97,7 +97,7 @@ func (b *Backend) peerLoop(chain *Chain, network NetworkClient) error {
 			if err := rlp.DecodeBytes(msg.Payload, &block); err != nil {
 				log.Error("decoding block", "error", err)
 			}
-			chain.NotifyBlock(&block)
+			chain.AddBlock(&block)
 		case <-b.quit:
 			return nil
 		}

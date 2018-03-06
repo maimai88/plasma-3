@@ -32,7 +32,6 @@ def deposit(txHash: bytes32):
     # txHash is a hack to workaround problem with vyper and null bytes
     # this is serious security leak and should not be used by anyone
     zero_bytes: bytes32
-    nei: bytes <= 130
     root: bytes32 = txHash
     for i in range(16):
         root = keccak256(concat(root, zero_bytes))
