@@ -7,7 +7,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -22,7 +21,7 @@ const (
 type Backend struct {
 	// key will be used to sign transactions
 	key *ecdsa.PrivateKey
-	// address is derived from a key
+	// plasma contract address
 	address common.Address
 	// FIXME for convenience it is fine
 	isAuthority bool
@@ -34,8 +33,7 @@ type Backend struct {
 	network NetworkClient
 }
 
-func NewBackend(client *rpc.Client, key *ecdsa.PrivateKey, isAuthority bool) *Backend {
-	address := crypto.PubkeyToAddress(key.PublicKey)
+func NewBackend(client *rpc.Client, key *ecdsa.PrivateKey, address common.Address, isAuthority bool) *Backend {
 	return &Backend{
 		key:         key,
 		address:     address,
@@ -78,6 +76,8 @@ func (b *Backend) Start(shh *shhclient.Client, backend bind.ContractBackend) err
 }
 
 func (b *Backend) Stop() {
+	b.stateMu.Lock()
+	defer b.stateMu.Unlock()
 	b.chain.Stop()
 	close(b.quit)
 	b.wg.Wait()

@@ -1,4 +1,4 @@
-Deposit: __log__({depositor: address, value: int128})
+Deposit: __log__({depositor: address, value: int128(wei)})
 
 authority: public(address)
 last_child_block: public(int128)
@@ -28,23 +28,19 @@ def submitBlock(root: bytes32):
 
 @public
 @payable
-def deposit(tx: bytes <= 1024):
-    tx_list = RLPList(tx, [int128, int128, int128, int128, int128, int128,
-                           address, int128, address, int128, int128])
-    assert tx_list[0] == 0
-    assert tx_list[3] == 0
-    assert tx_list[7] == convert(msg.value, 'int128')
-
+def deposit(txHash: bytes32):
+    # txHash is a hack to workaround problem with vyper and null bytes
+    # this is serious security leak and should not be used by anyone
     zero_bytes: bytes32
     nei: bytes <= 130
-    root: bytes32 = keccak256(concat(tx, nei))
+    root: bytes32 = txHash
     for i in range(16):
         root = keccak256(concat(root, zero_bytes))
         zero_bytes = keccak256(concat(zero_bytes, zero_bytes))
     self.child_chain[self.last_child_block] = {
-        root: zero_bytes,
+        root: root,
         created_at: block.timestamp
     }
     self.last_child_block += 1
     self.last_parent_block = block.number
-    log.Deposit(tx_list[6], tx_list[7])
+    log.Deposit(msg.sender, msg.value)

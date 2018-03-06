@@ -117,20 +117,28 @@ func (c *Chain) addBlock(block *Block) {
 func (c *Chain) validateTransaction(tx *Transaction) bool {
 	c.stateMu.Lock()
 	defer c.stateMu.Unlock()
+	inputs := big.NewInt(0)
 	if tx.Blknum1.Int64() != 0 {
 		if c.blocks[tx.Blknum1.Int64()-1].IsSpent(tx.Txindex1, tx.Oindex1) {
 			log.Info("invalid transaction")
 			return false
 		}
+		inputs.Add(c.blocks[tx.Blknum1.Int64()-1].Amount(tx.Txindex1, tx.Oindex1), inputs)
 	}
 	if tx.Blknum2.Int64() != 0 {
 		if c.blocks[tx.Blknum2.Int64()-1].IsSpent(tx.Txindex2, tx.Oindex2) {
 			log.Info("invalid transaction")
 			return false
 		}
+		inputs.Add(c.blocks[tx.Blknum1.Int64()-1].Amount(tx.Txindex2, tx.Oindex2), inputs)
 	}
-	// TODO check that the sum of inputs and outputs is the same
-	// TODO check that signature for the output matches input confirmation
+	outputs := big.NewInt(0)
+	outputs.Add(tx.Amount1, tx.Amount2)
+	outputs.Add(outputs, tx.Fee)
+	if inputs.Cmp(outputs) != 0 {
+		log.Info("tx invalid: inputs", inputs, "!=", "ouputs", outputs)
+		return false
+	}
 	return true
 }
 

@@ -58,12 +58,7 @@ func (tx *Transaction) Sign(key1 *ecdsa.PrivateKey, key2 *ecdsa.PrivateKey) (err
 }
 
 func NewDeposit(depositor common.Address, value *big.Int) *Transaction {
-	// no idea why but vyper fails to parse rlp lists with additional null bytes
 	return &Transaction{
-		Txindex1:  big.NewInt(1),
-		Oindex1:   big.NewInt(1),
-		Txindex2:  big.NewInt(1),
-		Oindex2:   big.NewInt(1),
 		Newowner1: depositor,
 		Amount1:   value,
 	}

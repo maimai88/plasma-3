@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dshulyak/plasma/pkg/merkle"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -99,7 +100,8 @@ func TestDeposit(t *testing.T) {
 	opts.Value = value
 	opts.GasLimit = 96273
 	encoded := tx.EncodeUnsigned()
-	_, err = contract.Deposit(opts, encoded)
+	hash := crypto.Keccak256Hash(encoded, tx.Sig1, tx.Sig2)
+	_, err = contract.Deposit(opts, hash)
 	assert.NoError(t, err)
 	backend.Commit()
 	blocknum, err := contract.Last_parent_block(nil)
@@ -110,7 +112,11 @@ func TestDeposit(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, int64(2), childnum.Int64())
 
+	encoded = append(encoded, tx.Sig1...)
+	encoded = append(encoded, tx.Sig2...)
+	tree := merkle.New(16, encoded)
 	// test that root hash is expected
-	_, err = contract.Child_chain__root(nil, big.NewInt(1))
+	root, err := contract.Child_chain__root(nil, big.NewInt(1))
 	assert.NoError(t, err)
+	assert.Equal(t, tree.Root(), common.Hash(root))
 }
