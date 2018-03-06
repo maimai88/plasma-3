@@ -104,6 +104,14 @@ func (c *Chain) addBlock(block *Block) {
 	c.stateMu.Lock()
 	defer c.stateMu.Unlock()
 	c.blocks = append(c.blocks, block)
+	for _, tx := range block.transactions {
+		if tx.Blknum1.Int64() != 0 {
+			c.blocks[tx.Blknum1.Int64()-1].SetSpent(tx.Txindex1, tx.Oindex1)
+		}
+		if tx.Blknum2.Int64() != 0 {
+			c.blocks[tx.Blknum2.Int64()-1].SetSpent(tx.Txindex2, tx.Oindex2)
+		}
+	}
 }
 
 func (c *Chain) validateTransaction(tx *Transaction) bool {
@@ -114,24 +122,21 @@ func (c *Chain) validateTransaction(tx *Transaction) bool {
 			log.Info("invalid transaction")
 			return false
 		}
-		// FIXME do only if tx is valid
-		c.blocks[tx.Blknum1.Int64()-1].SetSpent(tx.Txindex1, tx.Oindex1)
 	}
 	if tx.Blknum2.Int64() != 0 {
 		if c.blocks[tx.Blknum2.Int64()-1].IsSpent(tx.Txindex2, tx.Oindex2) {
 			log.Info("invalid transaction")
 			return false
 		}
-		// FIXME
-		c.blocks[tx.Blknum2.Int64()-1].SetSpent(tx.Txindex2, tx.Oindex2)
 	}
 	// TODO check that the sum of inputs and outputs is the same
 	// TODO check that signature for the output matches input confirmation
 	return true
 }
 
+// FIXME only autority needs to run this loop
 func (c *Chain) stateLoop() {
-	// FIXME concurrent deposits will blow this thing up
+	// FIXME concurrent deposits and regular blocks
 	pendingTransactions := make([]*Transaction, 0, 100)
 	var signerPeriod <-chan time.Time
 	// this requires better approach
