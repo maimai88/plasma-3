@@ -57,6 +57,10 @@ func (tx *Transaction) Sign(key1 *ecdsa.PrivateKey, key2 *ecdsa.PrivateKey) (err
 	return err
 }
 
+func (tx *Transaction) MerkleHash() common.Hash {
+	return crypto.Keccak256Hash(tx.EncodeUnsigned(), tx.Sig1, tx.Sig2)
+}
+
 func NewDeposit(depositor common.Address, value *big.Int) *Transaction {
 	return &Transaction{
 		Newowner1: depositor,

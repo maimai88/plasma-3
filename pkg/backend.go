@@ -2,7 +2,6 @@ package plasma
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -19,8 +18,6 @@ const (
 )
 
 type Backend struct {
-	// key will be used to sign transactions
-	key *ecdsa.PrivateKey
 	// plasma contract address
 	address common.Address
 	// FIXME for convenience it is fine
@@ -33,9 +30,8 @@ type Backend struct {
 	network NetworkClient
 }
 
-func NewBackend(client *rpc.Client, key *ecdsa.PrivateKey, address common.Address, isAuthority bool) *Backend {
+func NewBackend(client *rpc.Client, address common.Address, isAuthority bool) *Backend {
 	return &Backend{
-		key:         key,
 		address:     address,
 		isAuthority: isAuthority,
 	}

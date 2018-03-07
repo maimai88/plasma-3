@@ -102,8 +102,7 @@ func TestDeposit(t *testing.T) {
 	opts.GasLimit = 96273
 	tx := NewDeposit(addr2, value)
 	encoded := tx.EncodeUnsigned()
-	hash := crypto.Keccak256Hash(encoded, tx.Sig1, tx.Sig2)
-	_, err = contract.Deposit(opts, hash)
+	_, err = contract.Deposit(opts, encoded)
 	assert.NoError(t, err)
 	backend.Commit()
 	blocknum, err := contract.Last_parent_block(nil)

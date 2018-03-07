@@ -14,7 +14,6 @@ def __init__():
     self.last_child_block = 1
     self.last_parent_block = block.number
 
-
 @public
 def submitBlock(root: bytes32):
     assert msg.sender == self.authority
@@ -28,11 +27,17 @@ def submitBlock(root: bytes32):
 
 @public
 @payable
-def deposit(txHash: bytes32):
-    # txHash is a hack to workaround problem with vyper and null bytes
-    # this is serious security leak and should not be used by anyone
+def deposit(tx: bytes <= 1024):
+    # vyper compiler fails with  ValueError: source code string cannot contain null bytes
+    #tx_list = RLPList(tx, [int128, int128, int128, int128, int128, int128,
+    #                       address, int128, address, int128, int128])
+    #assert tx_list[0] == 0
+    #assert tx_list[3] == 0
+    #assert tx_list[7] == convert(msg.value, 'int128')
+
     zero_bytes: bytes32
-    root: bytes32 = txHash
+    nei: bytes <= 130
+    root: bytes32 = keccak256(concat(tx, nei))
     for i in range(16):
         root = keccak256(concat(root, zero_bytes))
         zero_bytes = keccak256(concat(zero_bytes, zero_bytes))
