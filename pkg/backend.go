@@ -6,15 +6,15 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/whisper/shhclient"
 	"github.com/ethereum/go-ethereum/whisper/whisperv5"
 )
 
-const (
-	plasmaSymKey = "security genius"
+var (
+	plasmaSymKey = crypto.Keccak256(crypto.Keccak256([]byte("randomkeyhere")))
 )
 
 type Backend struct {
@@ -30,7 +30,7 @@ type Backend struct {
 	network NetworkClient
 }
 
-func NewBackend(client *rpc.Client, address common.Address, isAuthority bool) *Backend {
+func NewBackend(address common.Address, isAuthority bool) *Backend {
 	return &Backend{
 		address:     address,
 		isAuthority: isAuthority,
@@ -80,6 +80,7 @@ func (b *Backend) Stop() {
 }
 
 func (b *Backend) peerLoop(chain *Chain, network NetworkClient) error {
+	log.Info("running peer loop")
 	blocks := make(chan *whisperv5.Message, 20)
 	sub, err := network.SubscribeBlock(blocks)
 	if err != nil {
@@ -93,6 +94,7 @@ func (b *Backend) peerLoop(chain *Chain, network NetworkClient) error {
 			if err := rlp.DecodeBytes(msg.Payload, &block); err != nil {
 				log.Error("decoding block", "error", err)
 			}
+			log.Info("received", "block", block)
 			chain.AddBlock(&block)
 		case <-b.quit:
 			return nil
@@ -114,14 +116,18 @@ func (b *Backend) autorityLoop(chain *Chain, network NetworkClient) error {
 		case msg := <-txs:
 			var tx Transaction
 			if err := rlp.DecodeBytes(msg.Payload, &tx); err != nil {
-				log.Error("decoding transaction", "error", err)
+				log.Error("decoding transaction", "error", err, "payload", msg.Payload)
+				continue
 			}
+			log.Info("received", "tx", tx)
 			chain.NotifyTx(&tx)
 		case block := <-addedBlocks:
 			payload, err := rlp.EncodeToBytes(block)
 			if err != nil {
 				log.Error("encoding block", "error", err)
+				continue
 			}
+			log.Info("signed", "block", block)
 			if err := network.BroadcastBlock(payload); err != nil {
 				log.Error("broadcasting block", "error", err)
 			}

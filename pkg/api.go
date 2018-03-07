@@ -11,9 +11,18 @@ import (
 )
 
 type PublicPlasmaAPI struct {
-	contract *PlasmaTransactor
+	contract *Plasma
 	network  NetworkClient
 	chain    *Chain
+}
+
+func NewPlasmaApi(backend *Backend) *PublicPlasmaAPI {
+	// FIXME figure out how to improve it
+	return &PublicPlasmaAPI{
+		contract: backend.chain.plasmaContract,
+		network:  backend.network,
+		chain:    backend.chain,
+	}
 }
 
 // FIXME check how geth handles selected private key

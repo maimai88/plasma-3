@@ -63,8 +63,19 @@ func (tx *Transaction) MerkleHash() common.Hash {
 
 func NewDeposit(depositor common.Address, value *big.Int) *Transaction {
 	return &Transaction{
+		Blknum1:   big.NewInt(0),
+		Txindex1:  big.NewInt(0),
+		Oindex1:   big.NewInt(0),
+		Blknum2:   big.NewInt(0),
+		Txindex2:  big.NewInt(0),
+		Oindex2:   big.NewInt(0),
 		Newowner1: depositor,
 		Amount1:   value,
+		Newowner2: common.Address{},
+		Amount2:   big.NewInt(0),
+		Fee:       big.NewInt(0),
+		Sig1:      []byte{},
+		Sig2:      []byte{},
 	}
 }
 
@@ -89,4 +100,13 @@ type UTXO struct {
 	Tx     *big.Int
 	OIndex *big.Int
 	Amount *big.Int
+}
+
+func EmptyUTXO() UTXO {
+	return UTXO{
+		Block:  big.NewInt(0),
+		Tx:     big.NewInt(0),
+		OIndex: big.NewInt(0),
+		Amount: big.NewInt(0),
+	}
 }

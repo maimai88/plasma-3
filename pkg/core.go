@@ -80,7 +80,7 @@ func (c *Chain) FindUTXOs(address common.Address) []UTXO {
 	defer c.stateMu.RUnlock()
 	rst := []UTXO{}
 	for i, block := range c.blocks {
-		for j, tx := range block.transactions {
+		for j, tx := range block.Transactions {
 			if !tx.spent1 && tx.Newowner1 == address {
 				rst = append(rst, UTXO{
 					big.NewInt(int64(i) + 1), big.NewInt(int64(j)),
@@ -100,11 +100,11 @@ func (c *Chain) AddBlock(block *Block) {
 	c.stateMu.Lock()
 	defer c.stateMu.Unlock()
 	c.blocks = append(c.blocks, block)
-	for _, tx := range block.transactions {
-		if tx.Blknum1 != nil {
+	for _, tx := range block.Transactions {
+		if tx.Blknum1.Cmp(big.NewInt(0)) == 1 {
 			c.blocks[tx.Blknum1.Int64()-1].SetSpent(tx.Txindex1, tx.Oindex1)
 		}
-		if tx.Blknum2 != nil {
+		if tx.Blknum2.Cmp(big.NewInt(0)) == 1 {
 			c.blocks[tx.Blknum2.Int64()-1].SetSpent(tx.Txindex2, tx.Oindex2)
 		}
 	}
@@ -114,14 +114,14 @@ func (c *Chain) ValidateTransaction(tx *Transaction) bool {
 	c.stateMu.Lock()
 	defer c.stateMu.Unlock()
 	inputs := big.NewInt(0)
-	if tx.Blknum1 != nil {
+	if tx.Blknum1.Cmp(big.NewInt(0)) == 1 {
 		if c.blocks[tx.Blknum1.Int64()-1].IsSpent(tx.Txindex1, tx.Oindex1) {
 			log.Info("invalid transaction")
 			return false
 		}
 		inputs.Add(c.blocks[tx.Blknum1.Int64()-1].Amount(tx.Txindex1, tx.Oindex1), inputs)
 	}
-	if tx.Blknum2 != nil {
+	if tx.Blknum2.Cmp(big.NewInt(0)) == 1 {
 		if c.blocks[tx.Blknum2.Int64()-1].IsSpent(tx.Txindex2, tx.Oindex2) {
 			log.Info("invalid transaction")
 			return false
@@ -172,6 +172,7 @@ func (c *Chain) stateLoop() {
 			}
 			pendingTransactions = make([]*Transaction, 0, 100)
 		case deposit := <-depositLogs:
+			log.Info("received deposit", "depositor", deposit.Depositor, "value", deposit.Value)
 			block := NewBlock(NewDeposit(deposit.Depositor, deposit.Value))
 			c.AddBlock(block)
 			c.subMu.RLock()

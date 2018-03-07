@@ -45,6 +45,7 @@ func (c *NetworkClient) BroadcastBlock(payload []byte) error {
 		Payload:   payload,
 		TTL:       20,
 		PowTarget: 10,
+		PowTime:   20,
 		Topic:     whisperv5.BytesToTopic([]byte(blockTopic)),
 	})
 }
@@ -57,7 +58,8 @@ func (c *NetworkClient) BroadcastTx(payload []byte) error {
 		Payload:   payload,
 		TTL:       20,
 		PowTarget: 10,
-		Topic:     whisperv5.BytesToTopic([]byte(blockTopic)),
+		PowTime:   20,
+		Topic:     whisperv5.BytesToTopic([]byte(txTopic)),
 	})
 }
 
@@ -71,6 +73,6 @@ func (c *NetworkClient) SubscribeBlock(ch chan<- *whisperv5.Message) (ethereum.S
 func (c *NetworkClient) SubscribeTx(ch chan<- *whisperv5.Message) (ethereum.Subscription, error) {
 	return c.client.SubscribeMessages(context.TODO(), whisperv5.Criteria{
 		SymKeyID: c.plasmaSymKeyID,
-		Topics:   []whisperv5.TopicType{whisperv5.BytesToTopic([]byte(blockTopic))},
+		Topics:   []whisperv5.TopicType{whisperv5.BytesToTopic([]byte(txTopic))},
 	}, ch)
 }

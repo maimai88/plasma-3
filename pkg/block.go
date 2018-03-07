@@ -9,32 +9,32 @@ const (
 )
 
 type Block struct {
-	transactions []*Transaction
+	Transactions []*Transaction
 }
 
 func NewBlock(txList ...*Transaction) *Block {
-	return &Block{transactions: txList}
+	return &Block{Transactions: txList}
 }
 
 func (b *Block) Amount(txindex, oindex *big.Int) *big.Int {
 	if oindex.Int64() == 0 {
-		return b.transactions[txindex.Int64()].Amount1
+		return b.Transactions[txindex.Int64()].Amount1
 	}
-	return b.transactions[txindex.Int64()].Amount2
+	return b.Transactions[txindex.Int64()].Amount2
 }
 
 func (b *Block) IsSpent(txindex, oindex *big.Int) bool {
 	if oindex.Int64() == 0 {
-		return b.transactions[txindex.Int64()].spent1
+		return b.Transactions[txindex.Int64()].spent1
 	}
-	return b.transactions[txindex.Int64()].spent2
+	return b.Transactions[txindex.Int64()].spent2
 }
 
 func (b *Block) SetSpent(txindex, oindex *big.Int) {
 	if oindex.Int64() == 0 {
-		b.transactions[txindex.Int64()].spent1 = true
+		b.Transactions[txindex.Int64()].spent1 = true
 	} else {
-		b.transactions[txindex.Int64()].spent2 = true
+		b.Transactions[txindex.Int64()].spent2 = true
 	}
 
 }
