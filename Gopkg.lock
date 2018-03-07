@@ -34,6 +34,8 @@
     "accounts/abi/bind",
     "accounts/abi/bind/backends",
     "accounts/keystore",
+    "accounts/usbwallet",
+    "accounts/usbwallet/internal/trezor",
     "common",
     "common/bitutil",
     "common/hexutil",
@@ -56,8 +58,11 @@
     "eth/filters",
     "ethdb",
     "event",
+    "internal/debug",
     "log",
+    "log/term",
     "metrics",
+    "node",
     "p2p",
     "p2p/discover",
     "p2p/discv5",
@@ -78,6 +83,15 @@
   packages = ["."]
   revision = "259ab82a6cad3992b4e21ff5cac294ccb06474bc"
   version = "v1.7.0"
+
+[[projects]]
+  name = "github.com/golang/protobuf"
+  packages = [
+    "proto",
+    "protoc-gen-go/descriptor"
+  ]
+  revision = "925541529c1fa6821df4e44ce2723319eb2be768"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -115,6 +129,24 @@
   version = "v1.0.1"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/karalabe/hid"
+  packages = ["."]
+  revision = "93a94ab6671087f0768f1d4e701c0ec14f449df9"
+
+[[projects]]
+  name = "github.com/mattn/go-colorable"
+  packages = ["."]
+  revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
+  version = "v0.0.9"
+
+[[projects]]
+  name = "github.com/mattn/go-isatty"
+  packages = ["."]
+  revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
+  version = "v0.0.3"
+
+[[projects]]
   name = "github.com/pborman/uuid"
   packages = ["."]
   revision = "e790cca94e6cc75c7064b1332e63811d4aae1a53"
@@ -125,6 +157,12 @@
   packages = ["difflib"]
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/prometheus/prometheus"
+  packages = ["util/flock"]
+  revision = "85f23d82a045d103ea7f3c89a91fba4a93e6367a"
+  version = "v2.1.0"
 
 [[projects]]
   branch = "master"
@@ -151,7 +189,8 @@
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
-    "require"
+    "require",
+    "suite"
   ]
   revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
   version = "v1.2.1"
@@ -259,9 +298,15 @@
   packages = ["."]
   revision = "c1b8fa8bdccecb0b8db834ee0b92fdbcfa606dd6"
 
+[[projects]]
+  name = "gopkg.in/urfave/cli.v1"
+  packages = ["."]
+  revision = "cfb38830724cc34fedffe9a2a29fb54fa9169cd1"
+  version = "v1.20.0"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fcd0160c11dc25b120ba3d318b5ae76d992b60e45fd945a308311ef2211d8588"
+  inputs-digest = "ad34b469edcdd46dfd2d8534c46ef2f692ecf3052744c967481a3304ea0b44cc"
   solver-name = "gps-cdcl"
   solver-version = 1
