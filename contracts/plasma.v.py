@@ -87,18 +87,21 @@ def withdraw(utxo: int128[3],
     tx_list = RLPList(tx, [int128, int128, int128, int128, int128, int128,
                            address, int128, address, int128, int128])
     assert self.membership(keccak256(concat(tx, sigs)), utxo, proof)
-    confirmationHash: bytes32 = keccak256(concat(
-        keccak256(tx),
-        self.child_chain[utxo[0]].root,
-    ))
     txHash: bytes32 = keccak256(tx)
+    confirmationHash: bytes32 = keccak256(concat(
+        txHash, self.child_chain[utxo[0]].root,
+    ))
+    # deposit
     if tx_list[0] == 0 and tx_list[3] == 0:
         assert msg.sender == self.ecrecover_bytes(
             confirmationHash, slice(confirmSigs, start=0, len=65))
+    # tx with 1 input
     if tx_list[0] != 0:
         assert self.ecrecover_bytes(txHash, slice(sigs, start=0, len=65)) == self.ecrecover_bytes(confirmationHash, slice(confirmSigs, start=0, len=65))
+    # tx with 2 inputs
     if tx_list[3] != 0:
         assert self.ecrecover_bytes(txHash, slice(sigs, start=65, len=65)) == self.ecrecover_bytes(confirmationHash, slice(confirmSigs, start=65, len=65))
+    # how to access static array with utxo[2]*2 + 6 ?
     if utxo[2] == 0:
         self.exits[prio] = {
             utxo: utxo,
@@ -119,7 +122,6 @@ def challenge(prio: int128, utxo: int128[3], tx: bytes <= 1024,
     tx_list = RLPList(tx, [int128, int128, int128, int128, int128, int128,
                            address, int128, address, int128, int128])
     exitutxo: int128[3] = self.exits[prio].utxo
-    # exit utxo must be used as an input for another tx
     if utxo[2] == 0:
         assert exitutxo[0] == tx_list[0]
         assert exitutxo[1] == tx_list[1]
@@ -130,13 +132,10 @@ def challenge(prio: int128, utxo: int128[3], tx: bytes <= 1024,
         assert exitutxo[2] == tx_list[5]
     # challenger must prove that signer confirmation is the same as exit owner
     assert self.exits[prio].owner == self.ecrecover_bytes(
-        keccak256(concat(
-            keccak256(tx),
-            self.child_chain[utxo[0]].root,
-        )), confirmSig)
+        keccak256(concat(keccak256(tx),self.child_chain[utxo[0]].root,)),
+        confirmSig)
     # verify that challenger tx is included in the confirmed block
     assert self.membership(keccak256(concat(
-        tx, sigs,
-    )), utxo, proof)
-    # how to delete mapping in vyper completely?
+        tx, sigs)), utxo, proof)
+    # how to delete mapping completely?
     self.exits[prio].amount = 0
