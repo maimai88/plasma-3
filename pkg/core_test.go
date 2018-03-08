@@ -30,7 +30,7 @@ func TestAddBlock(t *testing.T) {
 	assert.Equal(t,
 		UTXO{big.NewInt(1), big.NewInt(0), big.NewInt(0), big.NewInt(100)}, utxos[0])
 
-	tx := NewTransaction(utxos[0], UTXO{}, addr1, addr2, big.NewInt(45), big.NewInt(50), big.NewInt(5))
+	tx := NewTransaction(utxos[0], EmptyUTXO(), addr1, addr2, big.NewInt(45), big.NewInt(50), big.NewInt(5))
 	require.True(t, chain.ValidateTransaction(tx))
 	chain.AddBlock(NewBlock(tx))
 	utxos = chain.FindUTXOs(addr2)

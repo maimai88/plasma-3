@@ -22,7 +22,7 @@ func TestMerkleProof(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 	data := make([]byte, 20)
 	rand.Read(data)
-	tree := New(3, data)
+	tree := New(16, data)
 	rst := crypto.Keccak256Hash(data)
 	for _, sibling := range tree.GetProof(data) {
 		rst = crypto.Keccak256Hash(rst[:], sibling[:])

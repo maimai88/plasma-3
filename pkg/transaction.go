@@ -61,6 +61,13 @@ func (tx *Transaction) MerkleHash() common.Hash {
 	return crypto.Keccak256Hash(tx.EncodeUnsigned(), tx.Sig1, tx.Sig2)
 }
 
+func (tx *Transaction) Bytes() []byte {
+	bytes := tx.EncodeUnsigned()
+	bytes = append(bytes, tx.Sig2...)
+	bytes = append(bytes, tx.Sig2...)
+	return bytes
+}
+
 func NewDeposit(depositor common.Address, value *big.Int) *Transaction {
 	return &Transaction{
 		Blknum1:   big.NewInt(0),

@@ -100,6 +100,7 @@ func (c *Chain) AddBlock(block *Block) {
 	c.stateMu.Lock()
 	defer c.stateMu.Unlock()
 	c.blocks = append(c.blocks, block)
+	// validate transactions when added to a main state
 	for _, tx := range block.Transactions {
 		if tx.Blknum1.Cmp(big.NewInt(0)) == 1 {
 			c.blocks[tx.Blknum1.Int64()-1].SetSpent(tx.Txindex1, tx.Oindex1)

@@ -2,6 +2,7 @@ package plasma
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"math/rand"
 	"testing"
@@ -121,4 +122,56 @@ func TestDeposit(t *testing.T) {
 	root, err := contract.Child_chain__root(nil, big.NewInt(1))
 	assert.NoError(t, err)
 	assert.Equal(t, tree.Root(), common.Hash(root))
+}
+
+func TestWithdraw(t *testing.T) {
+	t.SkipNow()
+	key, err := crypto.GenerateKey()
+	require.NoError(t, err)
+	addr := crypto.PubkeyToAddress(key.PublicKey)
+	backend := backends.NewSimulatedBackend(core.GenesisAlloc{
+		addr: {Balance: big.NewInt(9000000000000000)},
+	})
+	opts := bind.NewKeyedTransactor(key)
+	_, _, contract, err := DeployPlasma(opts, backend)
+	require.NoError(t, err)
+	backend.Commit()
+
+	value := big.NewInt(100)
+	utxo := UTXO{big.NewInt(1), big.NewInt(0), big.NewInt(0), value}
+	empty := EmptyUTXO()
+	tx := NewTransaction(utxo, empty, addr, common.Address{}, utxo.Amount, big.NewInt(0), big.NewInt(0))
+	tx.Sign(key, nil)
+	encoded := tx.EncodeUnsigned()
+	encoded = append(encoded, tx.Sig1...)
+	encoded = append(encoded, tx.Sig2...)
+	tree := merkle.New(16, encoded)
+	for i := 0; i < 7; i++ {
+		backend.Commit()
+	}
+	opts.GasLimit = 100000
+	_, err = contract.SubmitBlock(opts, tree.Root())
+	require.NoError(t, err)
+	backend.Commit()
+	block, err := contract.Last_child_block(nil)
+	require.NoError(t, err)
+	assert.Equal(t, int64(2), block.Int64())
+	childRoot, err := contract.Child_chain__root(nil, big.NewInt(1))
+	require.NoError(t, err)
+	assert.Equal(t, tree.Root(), common.Hash(childRoot))
+
+	sigs := make([]byte, 0, 130)
+	sigs = append(sigs, tx.Sig1...)
+	sigs = append(sigs, tx.Sig2...)
+	proof := tree.GetProof(encoded)
+	assert.Len(t, proof, 16)
+	array := [16][32]byte{}
+	for i, sib := range proof {
+		array[i] = [32]byte(sib)
+	}
+	opts.GasLimit = 200000
+	_, err = contract.Withdraw(opts, [3]*big.Int{big.NewInt(1), big.NewInt(0), big.NewInt(0)}, tx.EncodeUnsigned(), array, sigs, []byte{})
+	require.NoError(t, err)
+	backend.Commit()
+	fmt.Println(contract.Exits__utxo(nil, big.NewInt(1), big.NewInt(0)))
 }

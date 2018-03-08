@@ -15,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -50,7 +49,6 @@ type SimulationTestSuite struct {
 }
 
 func (s *SimulationTestSuite) SetupTest() {
-	log.Root().SetHandler(log.StderrHandler)
 	s.accounts = make([]account, 3)
 	s.nodes = make([]*node.Node, 3)
 	s.plasmaBackends = make([]*Backend, 3)
@@ -90,9 +88,9 @@ func (s *SimulationTestSuite) SetupTest() {
 	s.Require().NoError(err)
 	s.plasmaAddress = address
 
-	s.plasmaBackends[0] = NewBackend(s.plasmaAddress, true)
-	s.plasmaBackends[1] = NewBackend(s.plasmaAddress, false)
-	s.plasmaBackends[2] = NewBackend(s.plasmaAddress, false)
+	s.plasmaBackends[0] = NewBackend(s.accounts[0].key, s.plasmaAddress, true)
+	s.plasmaBackends[1] = NewBackend(s.accounts[1].key, s.plasmaAddress, false)
+	s.plasmaBackends[2] = NewBackend(s.accounts[2].key, s.plasmaAddress, false)
 
 	s.Require().NoError(s.backend.SendRawTransaction(context.TODO(), rlpTx))
 	// commit plasma and rlp decoder
@@ -118,18 +116,18 @@ func (s *SimulationTestSuite) TestWorkflow() {
 	api := NewPlasmaApi(s.plasmaBackends[0])
 	api.Deposit(s.accounts[0].key, big.NewInt(1000))
 	s.backend.Commit()
-	time.Sleep(time.Second)
+	time.Sleep(2 * time.Second)
 	api2 := NewPlasmaApi(s.plasmaBackends[1])
 	s.Equal(api.UtxoBalance(s.accounts[0].address), api2.UtxoBalance(s.accounts[0].address))
 	api2.Deposit(s.accounts[1].key, big.NewInt(2000))
 	s.backend.Commit()
-	time.Sleep(time.Second)
+	time.Sleep(2 * time.Second)
 	s.Equal(api.UtxoBalance(s.accounts[1].address), api2.UtxoBalance(s.accounts[1].address))
 	utxos := api2.UtxoBalance(s.accounts[1].address)
 	s.Require().Len(utxos, 1)
 	tx := NewTransaction(utxos[0], EmptyUTXO(), s.accounts[0].address, common.Address{}, utxos[0].Amount, big.NewInt(0), big.NewInt(0))
 	s.Require().NoError(api2.SendTransaction(tx, s.accounts[1].key, nil))
-	time.Sleep(time.Second)
+	time.Sleep(2 * time.Second)
 	s.Len(api.UtxoBalance(s.accounts[0].address), 2)
 	s.Len(api2.UtxoBalance(s.accounts[1].address), 0)
 }

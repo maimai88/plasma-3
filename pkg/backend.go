@@ -2,6 +2,7 @@ package plasma
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -18,20 +19,23 @@ var (
 )
 
 type Backend struct {
+	key *ecdsa.PrivateKey
 	// plasma contract address
 	address common.Address
 	// FIXME for convenience it is fine
 	isAuthority bool
 
-	stateMu sync.Mutex
-	quit    chan struct{}
-	wg      sync.WaitGroup
-	chain   *Chain
-	network NetworkClient
+	stateMu  sync.Mutex
+	quit     chan struct{}
+	wg       sync.WaitGroup
+	chain    *Chain
+	network  NetworkClient
+	contract *Plasma
 }
 
-func NewBackend(address common.Address, isAuthority bool) *Backend {
+func NewBackend(key *ecdsa.PrivateKey, address common.Address, isAuthority bool) *Backend {
 	return &Backend{
+		key:         key,
 		address:     address,
 		isAuthority: isAuthority,
 	}
@@ -44,6 +48,7 @@ func (b *Backend) Start(shh *shhclient.Client, backend bind.ContractBackend) err
 	if err != nil {
 		return err
 	}
+	b.contract = contract
 	symID, err := shh.AddSymmetricKey(context.TODO(), []byte(plasmaSymKey))
 	if err != nil {
 		return err
@@ -108,6 +113,7 @@ func (b *Backend) autorityLoop(chain *Chain, network NetworkClient) error {
 	if err != nil {
 		return err
 	}
+	opts := bind.NewKeyedTransactor(b.key)
 	defer sub.Unsubscribe()
 	addedBlocks := make(chan *Block, 20)
 	chain.SubscribeBlocks(addedBlocks)
@@ -122,6 +128,11 @@ func (b *Backend) autorityLoop(chain *Chain, network NetworkClient) error {
 			log.Info("received", "tx", tx)
 			chain.NotifyTx(&tx)
 		case block := <-addedBlocks:
+			_, err := b.contract.SubmitBlock(opts, block.Root())
+			if err != nil {
+				log.Error("submiting block on chain", block.Root(), err)
+				continue
+			}
 			payload, err := rlp.EncodeToBytes(block)
 			if err != nil {
 				log.Error("encoding block", "error", err)

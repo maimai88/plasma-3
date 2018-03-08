@@ -18,7 +18,7 @@ func TestTransactionSign(t *testing.T) {
 	key2, err := crypto.GenerateKey()
 	require.NoError(t, err)
 	addr2 := crypto.PubkeyToAddress(key2.PublicKey)
-	tx := NewTransaction(UTXO{}, UTXO{}, addr1, addr2, big.NewInt(15), big.NewInt(10), big.NewInt(5))
+	tx := NewTransaction(EmptyUTXO(), EmptyUTXO(), addr1, addr2, big.NewInt(15), big.NewInt(10), big.NewInt(5))
 	require.NoError(t, tx.Sign(key1, key2))
 	hash := crypto.Keccak256(tx.EncodeUnsigned())
 	pub1, err := crypto.SigToPub(hash, tx.Sig1)
