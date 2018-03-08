@@ -13,7 +13,6 @@ exits: public({
     amount: int128,
 }[int128])
 
-
 @private
 def membership(leaf: bytes32, utxo: int128[3], proof: bytes32[16]) -> bool:
     result: bytes32 = leaf
@@ -27,13 +26,14 @@ def membership(leaf: bytes32, utxo: int128[3], proof: bytes32[16]) -> bool:
     return result == self.child_chain[utxo[0]].root
 
 @private
-def ecrecover_bytes(h: bytes32, sig: bytes <= 65) -> address:
+def ecrecover_bytes(h: bytes32, sig: bytes <= 66) -> address:
+    v: int128 = convert(slice(sig, start=64, len=1), 'int128')
+    if v < 27:
+        v += 27
     return ecrecover(h,
+                     convert(v, 'uint256'),
                      extract32(sig, 0, type=uint256),
-                     extract32(sig, 32, type=uint256),
-                     convert(
-                         convert(
-                             slice(sig, start=64, len=1), 'int128'), 'uint256'))
+                     extract32(sig, 32, type=uint256))
 
 @public
 def __init__():
@@ -78,7 +78,7 @@ def deposit(tx: bytes <= 1024):
 @payable
 def withdraw(utxo: int128[3],
              tx: bytes <= 1024, proof: bytes32[16],
-             sigs: bytes <= 130, confirmSigs: bytes <= 130):
+             sigs: bytes <= 132, confirmSigs: bytes <= 132):
     # TODO if child chain block is older then 7 days use block
     prio: int128 = utxo[0] * 1000000000 + utxo[1] * 10000 + utxo[2]
     # do i care if same exit will be added multiple times?
@@ -89,20 +89,16 @@ def withdraw(utxo: int128[3],
     assert self.membership(keccak256(concat(tx, sigs)), utxo, proof)
     confirmationHash: bytes32 = keccak256(concat(
         keccak256(tx),
-        sigs,
         self.child_chain[utxo[0]].root,
     ))
     txHash: bytes32 = keccak256(tx)
     if tx_list[0] == 0 and tx_list[3] == 0:
         assert msg.sender == self.ecrecover_bytes(
-            confirmationHash,
-            slice(confirmSigs, start=0, len=65))
-    if tx_list[0] != 0:
-        assert self.ecrecover_bytes(txHash, slice(sigs, start=0, len=65)) == self.ecrecover_bytes(
             confirmationHash, slice(confirmSigs, start=0, len=65))
+    if tx_list[0] != 0:
+        assert self.ecrecover_bytes(txHash, slice(sigs, start=0, len=65)) == self.ecrecover_bytes(confirmationHash, slice(confirmSigs, start=0, len=65))
     if tx_list[3] != 0:
-        assert self.ecrecover_bytes(txHash, slice(sigs, start=65, len=65)) == self.ecrecover_bytes(
-            confirmationHash, slice(confirmSigs, start=65, len=65))
+        assert self.ecrecover_bytes(txHash, slice(sigs, start=65, len=65)) == self.ecrecover_bytes(confirmationHash, slice(confirmSigs, start=65, len=65))
     if utxo[2] == 0:
         self.exits[prio] = {
             utxo: utxo,
@@ -118,7 +114,7 @@ def withdraw(utxo: int128[3],
 
 @public
 def challenge(prio: int128, utxo: int128[3], tx: bytes <= 1024,
-              proof: bytes32[16], sigs: bytes <= 130, confirmSig: uint256[3]):
+              proof: bytes32[16], sigs: bytes <= 132, confirmSig: bytes <= 66):
     assert self.exits[prio].amount != 0
     tx_list = RLPList(tx, [int128, int128, int128, int128, int128, int128,
                            address, int128, address, int128, int128])
@@ -133,12 +129,11 @@ def challenge(prio: int128, utxo: int128[3], tx: bytes <= 1024,
         assert exitutxo[1] == tx_list[4]
         assert exitutxo[2] == tx_list[5]
     # challenger must prove that signer confirmation is the same as exit owner
-    assert self.exits[prio].owner == ecrecover(
+    assert self.exits[prio].owner == self.ecrecover_bytes(
         keccak256(concat(
             keccak256(tx),
-            sigs,
             self.child_chain[utxo[0]].root,
-        )), confirmSig[0], confirmSig[1], confirmSig[2])
+        )), confirmSig)
     # verify that challenger tx is included in the confirmed block
     assert self.membership(keccak256(concat(
         tx, sigs,
