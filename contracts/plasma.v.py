@@ -54,7 +54,7 @@ def submitBlock(root: bytes32):
 @public
 @payable
 def deposit(tx: bytes <= 1024):
-    # vyper compiler fails with  ValueError: source code string cannot contain null bytes
+    # vyper compiler fails with  ValueError: source code string cannot contain null bytes when list contains many(?) zero integers
     #tx_list = RLPList(tx, [int128, int128, int128, int128, int128, int128,
     #                       address, int128, address, int128, int128])
     #assert tx_list[0] == 0
@@ -91,14 +91,11 @@ def withdraw(utxo: int128[3],
     confirmationHash: bytes32 = keccak256(concat(
         txHash, self.child_chain[utxo[0]].root,
     ))
-    # deposit
     if tx_list[0] == 0 and tx_list[3] == 0:
         assert msg.sender == self.ecrecover_bytes(
             confirmationHash, slice(confirmSigs, start=0, len=65))
-    # tx with 1 input
     if tx_list[0] != 0:
         assert self.ecrecover_bytes(txHash, slice(sigs, start=0, len=65)) == self.ecrecover_bytes(confirmationHash, slice(confirmSigs, start=0, len=65))
-    # tx with 2 inputs
     if tx_list[3] != 0:
         assert self.ecrecover_bytes(txHash, slice(sigs, start=65, len=65)) == self.ecrecover_bytes(confirmationHash, slice(confirmSigs, start=65, len=65))
     # how to access static array with utxo[2]*2 + 6 ?
@@ -118,6 +115,7 @@ def withdraw(utxo: int128[3],
 @public
 def challenge(prio: int128, utxo: int128[3], tx: bytes <= 1024,
               proof: bytes32[16], sigs: bytes <= 132, confirmSig: bytes <= 66):
+    # no need to send utxo here, oindex from tx will be enough
     assert self.exits[prio].amount != 0
     tx_list = RLPList(tx, [int128, int128, int128, int128, int128, int128,
                            address, int128, address, int128, int128])
@@ -130,12 +128,9 @@ def challenge(prio: int128, utxo: int128[3], tx: bytes <= 1024,
         assert exitutxo[0] == tx_list[3]
         assert exitutxo[1] == tx_list[4]
         assert exitutxo[2] == tx_list[5]
-    # challenger must prove that signer confirmation is the same as exit owner
     assert self.exits[prio].owner == self.ecrecover_bytes(
-        keccak256(concat(keccak256(tx),self.child_chain[utxo[0]].root,)),
+        keccak256(concat(keccak256(tx),self.child_chain[utxo[0]].root)),
         confirmSig)
-    # verify that challenger tx is included in the confirmed block
-    assert self.membership(keccak256(concat(
-        tx, sigs)), utxo, proof)
-    # how to delete mapping completely?
+    assert self.membership(keccak256(concat(tx, sigs)), utxo, proof)
+    # how to delete an item from mapping?
     self.exits[prio].amount = 0

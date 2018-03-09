@@ -2,7 +2,6 @@ package plasma
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"math/rand"
 	"testing"
@@ -135,7 +134,6 @@ func TestDeposit(t *testing.T) {
 }
 
 func TestWithdraw(t *testing.T) {
-	t.SkipNow()
 	key, err := crypto.GenerateKey()
 	require.NoError(t, err)
 	addr := crypto.PubkeyToAddress(key.PublicKey)
@@ -147,13 +145,9 @@ func TestWithdraw(t *testing.T) {
 
 	value := big.NewInt(100)
 	utxo := UTXO{big.NewInt(1), big.NewInt(0), big.NewInt(0), value}
-	empty := EmptyUTXO()
-	tx := NewTransaction(utxo, empty, addr, common.Address{}, utxo.Amount, big.NewInt(0), big.NewInt(0))
+	tx := NewTransaction(utxo, UTXO{big.NewInt(0), big.NewInt(1), big.NewInt(1), value}, addr, addr, utxo.Amount, big.NewInt(1), big.NewInt(1))
 	tx.Sign(key, nil)
-	encoded := tx.EncodeUnsigned()
-	encoded = append(encoded, tx.Sig1...)
-	encoded = append(encoded, tx.Sig2...)
-	tree := merkle.New(16, encoded)
+	tree := merkle.New(16, tx.Bytes())
 	for i := 0; i < 7; i++ {
 		backend.Commit()
 	}
@@ -168,20 +162,31 @@ func TestWithdraw(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, tree.Root(), common.Hash(childRoot))
 
-	sigs := make([]byte, 0, 130)
-	sigs = append(sigs, tx.Sig1...)
-	sigs = append(sigs, tx.Sig2...)
-	proof := tree.GetProof(encoded)
+	proof := tree.GetProof(tx.Bytes())
 	assert.Len(t, proof, 16)
 	array := [16][32]byte{}
 	for i, sib := range proof {
 		array[i] = [32]byte(sib)
 	}
-	opts.GasLimit = 200000
-	_, err = contract.Withdraw(opts, [3]*big.Int{big.NewInt(1), big.NewInt(0), big.NewInt(0)}, tx.EncodeUnsigned(), array, sigs, []byte{})
+	opts.GasLimit = 300000
+	confHash := crypto.Keccak256(crypto.Keccak256(tx.EncodeUnsigned()), childRoot[:])
+	confSig, _ := crypto.Sign(confHash, key)
+	_, err = contract.Withdraw(opts, [3]*big.Int{big.NewInt(1), big.NewInt(0), big.NewInt(0)}, tx.EncodeUnsigned(), array, tx.Sig1, confSig)
 	require.NoError(t, err)
 	backend.Commit()
-	fmt.Println(contract.Exits__utxo(nil, big.NewInt(1), big.NewInt(0)))
+	prio := big.NewInt(1000000000)
+	amount, _ := contract.Exits__amount(nil, prio)
+	assert.Equal(t, tx.Amount1.Int64(), amount.Int64())
+	owner, _ := contract.Exits__owner(nil, prio)
+	assert.Equal(t, tx.Newowner1, owner)
+
+	_, err = contract.Challenge(opts, prio, [3]*big.Int{big.NewInt(1), big.NewInt(0), big.NewInt(0)}, tx.EncodeUnsigned(), array, tx.Sig1, confSig)
+	require.NoError(t, err)
+	backend.Commit()
+	amount, _ = contract.Exits__amount(nil, prio)
+	assert.Equal(t, big.NewInt(0).Int64(), amount.Int64())
+	owner, _ = contract.Exits__owner(nil, prio)
+	assert.Equal(t, addr, owner)
 }
 
 /*

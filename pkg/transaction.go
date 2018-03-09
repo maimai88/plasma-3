@@ -63,7 +63,7 @@ func (tx *Transaction) MerkleHash() common.Hash {
 
 func (tx *Transaction) Bytes() []byte {
 	bytes := tx.EncodeUnsigned()
-	bytes = append(bytes, tx.Sig2...)
+	bytes = append(bytes, tx.Sig1...)
 	bytes = append(bytes, tx.Sig2...)
 	return bytes
 }

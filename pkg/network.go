@@ -6,6 +6,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/whisper/shhclient"
 	"github.com/ethereum/go-ethereum/whisper/whisperv5"
 )
@@ -26,14 +27,19 @@ type NetworkClient struct {
 	plasmaSymKeyID string
 }
 
-// NotifyRecipient sends a confirmation message to a recipient.
+// SendConfirmation sends a confirmation message to a recipient.
 // message must be encrypted with public key of recipient
-func (c *NetworkClient) NotifyRecipient(key *ecdsa.PublicKey, payload []byte) error {
+func (c *NetworkClient) SendConfirmation(key *ecdsa.PublicKey, conf Confirmation) error {
+	payload, err := rlp.EncodeToBytes(conf)
+	if err != nil {
+		return err
+	}
 	return c.client.Post(context.TODO(), whisperv5.NewMessage{
 		PublicKey: crypto.FromECDSAPub(key),
 		Payload:   payload,
 		TTL:       20,
 		PowTarget: 10,
+		PowTime:   20,
 	})
 }
 
@@ -75,4 +81,10 @@ func (c *NetworkClient) SubscribeTx(ch chan<- *whisperv5.Message) (ethereum.Subs
 		SymKeyID: c.plasmaSymKeyID,
 		Topics:   []whisperv5.TopicType{whisperv5.BytesToTopic([]byte(txTopic))},
 	}, ch)
+}
+
+type Confirmation struct {
+	Blknum          int
+	Txindex         int
+	ConfirmationSig []byte
 }

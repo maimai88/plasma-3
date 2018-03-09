@@ -1,11 +1,13 @@
 package plasma
 
 import (
+	"fmt"
 	"math/big"
 	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 )
 
@@ -94,6 +96,18 @@ func (c *Chain) FindUTXOs(address common.Address) []UTXO {
 		}
 	}
 	return rst
+}
+
+func (c *Chain) ConfirmationHash(blockIndex, txIndex int) (hash common.Hash, err error) {
+	if len(c.blocks) < blockIndex {
+		return hash, fmt.Errorf("block index %d is not found", blockIndex)
+	}
+	if len(c.blocks[blockIndex-1].Transactions) < txIndex {
+		return hash, fmt.Errorf("block %d doesn't have tx %d", blockIndex, txIndex)
+	}
+	txHash := crypto.Keccak256(c.blocks[blockIndex-1].Transactions[txIndex-1].EncodeUnsigned())
+	root := c.blocks[blockIndex-1].Root()
+	return crypto.Keccak256Hash(txHash, root[:]), nil
 }
 
 func (c *Chain) AddBlock(block *Block) {
