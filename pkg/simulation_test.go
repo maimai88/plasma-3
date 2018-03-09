@@ -100,6 +100,12 @@ func (s *SimulationTestSuite) SetupTest() {
 	}
 }
 
+func (s *SimulationTestSuite) TearDown() {
+	for _, node := range s.nodes {
+		node.Stop()
+	}
+}
+
 func (s *SimulationTestSuite) TestWorkflow() {
 	rpc, err := s.nodes[0].Attach()
 	s.Require().NoError(err)

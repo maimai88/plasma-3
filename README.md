@@ -1,8 +1,5 @@
-TODO
-====
+Plasma-mvp
+==========
 
-1. finish exit and challenge contract code with tests
-2. add confirmation into simulation
-3. simulation should include basics + exit/challenge/finalize
-3. add a heapqueue
-4. integrate api into ethereum node, try to run it from geth console
+This version of plasma mvp will be built using go-ethereum node/devp2p stack,
+with whisper as a transport for chain and vyper for plasma contract.

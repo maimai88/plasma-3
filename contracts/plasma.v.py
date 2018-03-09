@@ -134,3 +134,8 @@ def challenge(prio: int128, utxo: int128[3], tx: bytes <= 1024,
     assert self.membership(keccak256(concat(tx, sigs)), utxo, proof)
     # how to delete an item from mapping?
     self.exits[prio].amount = 0
+
+
+@public
+def finalize():
+    assert true

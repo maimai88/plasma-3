@@ -189,6 +189,10 @@ func TestWithdraw(t *testing.T) {
 	assert.Equal(t, addr, owner)
 }
 
+func TestFinalize(t *testing.T) {
+	t.SkipNow()
+}
+
 /*
 func TestEcrecovery(t *testing.T) {
 	//log.Root().SetHandler(log.StderrHandler)
