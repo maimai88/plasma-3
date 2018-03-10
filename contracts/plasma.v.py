@@ -12,6 +12,8 @@ exits: public({
     owner: address,
     amount: int128,
 }[int128])
+exitsOrder: int128[1000]
+currentExit: int128
 
 @private
 def membership(leaf: bytes32, utxo: int128[3], proof: bytes32[16]) -> bool:
@@ -27,19 +29,30 @@ def membership(leaf: bytes32, utxo: int128[3], proof: bytes32[16]) -> bool:
 
 @private
 def ecrecover_bytes(h: bytes32, sig: bytes <= 66) -> address:
-    v: int128 = convert(slice(sig, start=64, len=1), 'int128')
+    # create empty bytes32 array, replace last byte with signature last byte
+    # and parse it with extract32
+    v: int128 = extract32(
+        concat(
+            slice(
+                concat(convert(0, 'bytes32'), ''), start=0, len=31),
+            slice(sig, start=64, len=1)),
+        0, type=int128)
+    # vyper fails to parse null byte into integer
+    # v: int128 = convert(slice(sig, start=64, len=1), 'int128')
     if v < 27:
         v += 27
-    return ecrecover(h,
+    rst: address = ecrecover(h,
                      convert(v, 'uint256'),
                      extract32(sig, 0, type=uint256),
                      extract32(sig, 32, type=uint256))
+    return rst
 
 @public
 def __init__():
     self.authority = msg.sender
     self.last_child_block = 1
     self.last_parent_block = block.number
+    self.currentExit = 0
 
 @public
 def submitBlock(root: bytes32):
@@ -111,6 +124,8 @@ def withdraw(utxo: int128[3],
             owner: tx_list[8],
             amount: tx_list[9],
         }
+    self.exitsOrder[self.currentExit] = prio
+    self.currentExit += 1
 
 @public
 def challenge(prio: int128, utxo: int128[3], tx: bytes <= 1024,
@@ -135,7 +150,13 @@ def challenge(prio: int128, utxo: int128[3], tx: bytes <= 1024,
     # how to delete an item from mapping?
     self.exits[prio].amount = 0
 
-
 @public
 def finalize():
-    assert true
+    # i definitely need dynamic array for priority queue
+    for prio in self.exitsOrder:
+        if prio == 0:
+            continue
+        if self.exits[prio].amount == 0:
+            continue
+        send(self.exits[prio].owner, as_wei_value(self.exits[prio].amount, 'wei'))
+        self.exits[prio].amount = 0
