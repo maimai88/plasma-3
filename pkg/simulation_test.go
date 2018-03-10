@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -52,8 +53,10 @@ func (s *SimulationTestSuite) SetupTest() {
 	s.accounts = make([]account, 3)
 	s.nodes = make([]*node.Node, 3)
 	s.plasmaBackends = make([]*Backend, 3)
+	rand.Seed(time.Now().Unix())
+	rand.Intn(50)
+	port := 8870 + rand.Intn(50)
 	for i := range s.accounts {
-		port := 8870
 		key, err := crypto.GenerateKey()
 		s.Require().NoError(err)
 		s.accounts[i] = account{key, crypto.PubkeyToAddress(key.PublicKey)}
