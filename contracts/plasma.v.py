@@ -12,7 +12,8 @@ exits: public({
     owner: address,
     amount: int128,
 }[int128])
-exitsOrder: int128[1000]
+# for testing
+exitsOrder: int128[100]
 currentExit: int128
 
 @private
@@ -29,6 +30,8 @@ def membership(leaf: bytes32, utxo: int128[3], proof: bytes32[16]) -> bool:
 
 @private
 def ecrecover_bytes(h: bytes32, sig: bytes <= 66) -> address:
+    # vyper fails to parse null byte into integer
+    # v: int128 = convert(slice(sig, start=64, len=1), 'int128')
     # create empty bytes32 array, replace last byte with signature last byte
     # and parse it with extract32
     v: int128 = extract32(
@@ -37,8 +40,6 @@ def ecrecover_bytes(h: bytes32, sig: bytes <= 66) -> address:
                 concat(convert(0, 'bytes32'), ''), start=0, len=31),
             slice(sig, start=64, len=1)),
         0, type=int128)
-    # vyper fails to parse null byte into integer
-    # v: int128 = convert(slice(sig, start=64, len=1), 'int128')
     if v < 27:
         v += 27
     rst: address = ecrecover(h,

@@ -190,7 +190,56 @@ func TestWithdraw(t *testing.T) {
 }
 
 func TestFinalize(t *testing.T) {
-	t.SkipNow()
+	key, err := crypto.GenerateKey()
+	require.NoError(t, err)
+	addr := crypto.PubkeyToAddress(key.PublicKey)
+	backend := makeBackend(t, addr)
+	opts := bind.NewKeyedTransactor(key)
+	_, _, contract, err := DeployPlasma(opts, backend)
+	require.NoError(t, err)
+	backend.Commit()
+
+	value := big.NewInt(197419314)
+
+	utxo := UTXO{big.NewInt(1), big.NewInt(0), big.NewInt(0), value}
+	tx := NewTransaction(utxo, UTXO{big.NewInt(0), big.NewInt(1), big.NewInt(1), value}, addr, addr, utxo.Amount, big.NewInt(1), big.NewInt(1))
+	tx.Sign(key, nil)
+	block := NewBlock(tx)
+	contract.SubmitBlock(opts, block.Root())
+	backend.Commit()
+
+	proof := block.tree.GetProof(tx.Bytes())
+	assert.Len(t, proof, 16)
+	array := [16][32]byte{}
+	for i, sib := range proof {
+		array[i] = [32]byte(sib)
+	}
+	opts.GasLimit = 300000
+	root := block.Root()
+	confHash := crypto.Keccak256(crypto.Keccak256(tx.EncodeUnsigned()), root[:])
+	confSig, _ := crypto.Sign(confHash, key)
+	_, err = contract.Withdraw(opts, [3]*big.Int{big.NewInt(1), big.NewInt(0), big.NewInt(0)}, tx.EncodeUnsigned(), array, tx.Sig1, confSig)
+	require.NoError(t, err)
+	backend.Commit()
+
+	prio := big.NewInt(1000000000)
+	amount, _ := contract.Exits__amount(nil, prio)
+	assert.Equal(t, tx.Amount1.Int64(), amount.Int64())
+	owner, _ := contract.Exits__owner(nil, prio)
+	assert.Equal(t, tx.Newowner1, owner)
+
+	opts.Value = value
+	contract.Deposit(opts, NewDeposit(addr, value).EncodeUnsigned())
+	backend.Commit()
+	balance1, _ := backend.BalanceAt(context.TODO(), addr, nil)
+	opts = bind.NewKeyedTransactor(key)
+	_, err = contract.Finalize(opts)
+	require.NoError(t, err)
+	backend.Commit()
+	amount, _ = contract.Exits__amount(nil, prio)
+	assert.Equal(t, int64(0), amount.Int64())
+	balance2, _ := backend.BalanceAt(context.TODO(), addr, nil)
+	assert.Equal(t, 1, balance2.Cmp(balance1))
 }
 
 /*
