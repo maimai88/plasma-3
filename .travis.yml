@@ -1,0 +1,7 @@
+language: go
+go:
+- 1.9.x
+jobs:
+  include:
+    - stage: Unit tests and simulation with whisper and geth simulated backend
+      script: make test

@@ -4,3 +4,6 @@ gen:
 	abigen -abi /tmp/plasma.abi -bin /tmp/plasma.bytecode -lang go --pkg plasma > pkg/plasma.go
 	-rm /tmp/plasma.abi
 	-rm /tmp/plasma.bytecode
+
+test:
+	go test ./pkg/... -count=3
